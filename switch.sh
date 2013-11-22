@@ -23,11 +23,11 @@
 
 ##### s2 -> s1 -> s4
 sudo ovs-ofctl add-flows s2 - <<'EOF'
-table=0, priority=99, in_port=1, vlan_tci=0, dl_src=f6:d1:5e:ff:1a:eb, actions=mod_vlan_vid:10,resubmit(,1)
+table=0, priority=99, in_port=1, vlan_tci=0, dl_src=92:8a:d3:c8:75:78, actions=mod_vlan_vid:10,resubmit(,1)
 EOF
 
 sudo ovs-ofctl add-flows s2 - <<'EOF'
-table=1, priority=100,dl_vlan=10, dl_dst=de:6b:f2:34:ea:58, actions=output:4
+table=1, priority=100,dl_vlan=10, dl_dst=a2:7c:b1:42:40:43, actions=output:4
 EOF
 
 sudo ovs-ofctl add-flows s1 - <<'EOF'
@@ -35,7 +35,7 @@ table=0, priority=99, in_port=1, actions=resubmit(,1)
 EOF
 
 sudo ovs-ofctl add-flows s1 - <<'EOF'
-table=1, priority=100, dl_vlan=10, dl_dst=de:6b:f2:34:ea:58, actions=output:3
+table=1, priority=100, dl_vlan=10, dl_dst=a2:7c:b1:42:40:43, actions=output:3
 EOF
 
 sudo ovs-ofctl add-flows s4 - <<'EOF'
@@ -43,18 +43,18 @@ table=0, priority=99, in_port=4,  actions=resubmit(,1)
 EOF
 
 sudo ovs-ofctl add-flows s4 - <<'EOF'
-table=1, priority=100,dl_vlan=10, dl_dst=de:6b:f2:34:ea:58, actions=strip_vlan,output:1
+table=1, priority=100,dl_vlan=10, dl_dst=a2:7c:b1:42:40:43, actions=strip_vlan,output:1
 EOF
 
 
 ######## s4 -> s1 -> s2
 
 sudo ovs-ofctl add-flows s4 - <<'EOF'
-table=0, priority=99, in_port=1, vlan_tci=0, dl_src=de:6b:f2:34:ea:58, actions=mod_vlan_vid:10,resubmit(,1)
+table=0, priority=99, in_port=1, vlan_tci=0, dl_src=a2:7c:b1:42:40:43, actions=mod_vlan_vid:10,resubmit(,1)
 EOF
 
 sudo ovs-ofctl add-flows s4 - <<'EOF'
-table=1, priority=100,dl_vlan=10, dl_dst=f6:d1:5e:ff:1a:eb, actions=output:4
+table=1, priority=100,dl_vlan=10, dl_dst=92:8a:d3:c8:75:78, actions=output:4
 EOF
 
 sudo ovs-ofctl add-flows s1 - <<'EOF'
@@ -62,7 +62,7 @@ table=0, priority=99, in_port=3, actions=resubmit(,1)
 EOF
 
 sudo ovs-ofctl add-flows s1 - <<'EOF'
-table=1, priority=100,dl_vlan=10, dl_dst=f6:d1:5e:ff:1a:eb, actions=output:1
+table=1, priority=100,dl_vlan=10, dl_dst=92:8a:d3:c8:75:78, actions=output:1
 EOF
 
 sudo ovs-ofctl add-flows s2 - <<'EOF'
@@ -70,7 +70,7 @@ table=0, priority=99, in_port=4, actions=resubmit(,1)
 EOF
 
 sudo ovs-ofctl add-flows s2 - <<'EOF'
-table=1, priority=100,dl_vlan=10, dl_dst=f6:d1:5e:ff:1a:eb, actions=strip_vlan,output:1
+table=1, priority=100,dl_vlan=10, dl_dst=92:8a:d3:c8:75:78, actions=strip_vlan,output:1
 EOF
 
 

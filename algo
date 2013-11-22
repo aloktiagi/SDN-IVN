@@ -1,0 +1,40 @@
+Current system has
+
+Vnet 10
+
+s2 - port 1 - 00:00:00:00:00:01
+s3 - port 1 - 00:00:00:00:00:04
+
+New node joins the system
+
+lets say new mac is 00:00:00:00:00:07 and switch is s4 and port is 1
+
+
+for h in host2
+do
+    Find destination switch from host
+    Find path from all switches to dest switch
+    s2 -> s1 -> s4
+    s3 -> s1 -> s4
+done
+
+For pair of src and dst mac combination form the path
+
+For intermediate switches
+
+s1
+
+Port connected to s2
+Port connected to s4
+
+table0 in port 1 vlan 10 output table 1
+table1 vlan10 dstmac 00:00:00:00:00:07 output outport 
+
+src mac : 00:00:00:00:00:04 dst mac 00:00:00:00:00:07
+port1:s3:port4 ------ port2:s1:port3 ------- port4:s4:port1
+
+
+
+
+
+
