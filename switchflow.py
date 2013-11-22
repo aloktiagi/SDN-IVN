@@ -1,11 +1,12 @@
 #!/usr/bin/python
+import subprocess
+
 switchlist = []
 switchlist.append("s2")
 switchlist.append("s1")
-switchlist.append("s3")
 switchlist.append("s4")
-srcmac = "00:00:00:00:00:01"
-dstmac = "00:00:00:00:00:07"
+srcmac = "4e:ce:8c:e1:29:aa"
+dstmac = "fa:91:d5:03:4e:9c"
 
 #switchlist[0]
 print "First switch configure only external ports"
@@ -20,8 +21,15 @@ fo.write("table=0, priority=99, in_port=");
 #TODO Find port that connects switchlist[i] to switchlist[i+1]
 fo.write("4");
 fo.write(", actions=resubmit(,1)");
+fo.write("\n")
+
+fo.write("table=1, priority=100, dl_vlan=10, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:");
+#TODO Find port that connects switchlist[0] to switchlist[1]
+fo.write("4");
+fo.write("\n")
+
 fo.close()
-#subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', self.server, '/tmp/flow'])
+subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', switchlist[0], '/tmp/flow'])
 
 #switchlist[last one]
 print "Last switch configure only external ports"
@@ -37,8 +45,15 @@ fo.write("table=0, priority=99, in_port=");
 #TODO Find port that connects switchlist[i] to switchlist[i+1]
 fo.write("4");
 fo.write(", actions=resubmit(,1)");
+
+fo.write("\n")
+fo.write("table=1, priority=100, dl_vlan=10, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:");
+#TODO Find port that connects switchlist[last] to switchlist[last - 1]
+fo.write("4");
+fo.write("\n")
 fo.close()
-#subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', self.server, '/tmp/flow'])
+
+subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', switchlist[len(switchlist)-1], '/tmp/flow'])
 
 for i in range(1,len(switchlist) - 1):
     fo = open("/tmp/flow", "wb")
@@ -76,7 +91,7 @@ for i in range(1,len(switchlist) - 1):
     fo.write("\n")
 
     fo.close()
-    #subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', self.server, '/tmp/flow'])
+    subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', switchlist[i], '/tmp/flow'])
 
     print switchlist[i]
 
