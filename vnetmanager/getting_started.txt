@@ -2,3 +2,41 @@
 sudo apt-get install python-mysqldb
 pip flask
 pip Flask-SQLAlchemy
+
+-----
+
+For setting up MySQL:
+
+1) Log into mysql with
+    mysql -u root -p
+
+2) Create vNetState database
+    CREATE DATABASE vNetAdmin;
+
+3) Create vnetadmin
+    CREATE USER vnetadmin IDENTIFIED BY 'password1*';
+
+4) Grant privileges to vnetadmin
+    GRANT ALL PRIVILIEGES ON vNetState.* TO vnetadmin@localhost IDENTIFIED BY 'password1*';
+    GRANT ALL PRIVILIEGES ON vNetState.* TO vnetadmin@'%' IDENTIFIED BY 'password1*';
+
+5) Exit mysql:
+    exit;
+
+6) Edit /etc/mysql/my.cfg
+    - Comment out line: bind-address = 127.0.0.1
+    - Add line: bind-address = 0.0.0.0
+
+7) Restart mysql
+    sudo /etc/init.d/mysql restart
+
+
+-----
+
+For initializing database:
+
+1) Go to ./SDN-IVN/vnetmanager
+
+2) python
+>>> from vnetmanager import db, models, init_db
+>>> init_db.init()
