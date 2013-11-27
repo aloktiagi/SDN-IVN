@@ -14,7 +14,7 @@ class UserStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(20), unique=True)
 
-    users = db.relationship('User')
+    users = db.relationship('User', backref='status', lazy='dynamic')
 
     def __init__(self, description):
         self.description = description
@@ -28,8 +28,8 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True)
     password = db.Column(db.String(50), unique=False)
 
-    status_id = db.Column(db.Integer, db.ForeignKey('user_status.id'))
-    status = db.relationship('UserStatus', uselist=False)
+    status_id = db.Column(db.Integer,
+        db.ForeignKey('user_status.id'), default=1)
 
     authorizednetworks = db.relationship('VirtualNetwork',
         secondary=NetworkAccess, lazy='dynamic')
