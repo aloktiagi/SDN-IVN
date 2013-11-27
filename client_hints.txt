@@ -1,0 +1,9 @@
+
+sends http requests to something like
+    http://vnetmanager:8080/api/<action_name>
+
+http method == post
+
+data type = application/json
+
+{ 'username': 'guest', 'password': 'whatever' }
