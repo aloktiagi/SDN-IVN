@@ -1,0 +1,42 @@
+#!./flask/bin/python
+
+from flask import Flask
+from flask.ext.sqlalchemy import SQLAlchemy
+#from vnetmanager.database import db_session
+
+app = Flask(__name__)
+
+'''
+@app.teardown_context
+def shutdown_session(exception=None):
+    db_session.remove()
+'''
+
+
+@app.route('/')
+def index():
+    return "Hello, World!"
+
+@app.route('/api/authenticate', methods = ['POST'])
+def authenticate():
+    return "authenticate"
+
+@app.route('/api/deauthenticate', methods = ['POST'])
+def deauthenticate():
+    return "deauthenticate"
+
+@app.route('/api/join', methods = ['POST'])
+def joinRequest():
+    return "network join request"
+
+@app.route('/api/leave', methods = ['POST'])
+def leaveRequest():
+    return "network leave request"
+
+@app.route('/api/networks', methods = ['GET']):
+def networks():
+    return "laskfjsaldjfkas"
+
+
+if __name__ == '__main__':
+    app.run(debug = True)
