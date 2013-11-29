@@ -104,6 +104,7 @@ class VirtualNetworkHost(db.Model):
         return '<PhysicalNetworkHost %r>' % self.mac
 
 
+'''
 NetworkTopology = db.Table('network_topology',
     db.Column('id', db.Integer, primary_key=True),
     db.Column('srcswitch_id', db.Integer, db.ForeignKey('network_switch.id')),
@@ -112,6 +113,22 @@ NetworkTopology = db.Table('network_topology',
     db.Column('link_capacity', db.Integer),
     db.Column('link_cost', db.Integer)
 )
+'''
+
+class NetworkTopology(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    srcswitch_id = db.Column(db.Integer, db.ForeignKey('network_switch.id'))
+    srcswitch_port = db.Column(db.Integer)
+    dstswitch_id = db.Column(db.Integer, db.ForeignKey('network_switch.id'))
+    link_capacity = db.Column(db.Integer)
+    link_cost = db.Column(db.Integer)
+
+    def __init__(self, srcswitch_id, srcswitch_port, dstswitch_id, cap, cost):
+        self.srcswitch_id = srcswitch_id
+        self.srcswitch_port = srcswitch_port
+        self.dstswitch_id = dstswitch_id
+        self.link_capacity = cap
+        self.link_cost = cost
 
 
 class NetworkSwitch(db.Model):
@@ -120,17 +137,21 @@ class NetworkSwitch(db.Model):
 
     hosts = db.relationship('PhysicalNetworkHost', lazy='dynamic')
 
-    '''
-    neighbors = db.relationship('NetworkSwitch', secondary=NetworkTopology,
-        lazy='dynamic')
-    '''
-
-    neighbors = db.relationship('NetworkSwitch',
-        secondary=NetworkTopology,
-        primaryjoin = id == NetworkTopology.c.srcswitch_id,
-        secondaryjoin = id == NetworkTopology.c.dstswitch_id,
-        lazy='dynamic')
-
     def __init__(self, swid):
         self.swid = swid
+
+    # Returns a list of tuples (<neighbor>, <port>, <cost>) where:
+    #   - <neighbor> is a NetworkSwitch instance representing the neighbor
+    #   - <port> is the number of current switch's port that is connected to
+    #       <neighbor>
+    #   - <cost> is the cost of the link for Dijkstra's algorithm
+    def neighbors(self):
+        def getdstswitch(n):
+            return NetworkSwitch.query.filter_by(id = n.dstswitch_id).first()
+
+        neighs = NetworkTopology.query.filter_by(srcswitch_id = self.id).all()
+
+        return map(
+            lambda n: (getdstswitch(n), n.srcswitch_port, n.link_cost), neighs)
+
 

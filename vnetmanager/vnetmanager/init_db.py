@@ -19,18 +19,11 @@ def init():
     db.session.commit()
 
     ins = [
-        models.NetworkTopology.insert().values(
-            srcswitch_id=1, srcswitch_port=1, dstswitch_id=2,
-            link_capacity=-1, link_cost=1),
-
-        models.NetworkTopology.insert().values(
-            srcswitch_id=2, srcswitch_port=1, dstswitch_id=1,
-            link_capacity=-1, link_cost=1)
+        models.NetworkTopology(1, 1, 2, -1, 1),
+        models.NetworkTopology(2, 1, 1, -1, 1)
     ]
 
-    for i in ins:
-        db.session.execute(i)
-
+    db.session.add_all(ins)
     db.session.commit()
 
 
