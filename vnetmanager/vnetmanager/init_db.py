@@ -19,8 +19,8 @@ def init():
     db.session.commit()
 
     ins = [
-        models.NetworkTopology(1, 1, 2, -1, 1),
-        models.NetworkTopology(2, 1, 1, -1, 1)
+        models.SwitchLink(1, 1, 2, -1, 1),
+        models.SwitchLink(2, 1, 1, -1, 1)
     ]
 
     db.session.add_all(ins)
