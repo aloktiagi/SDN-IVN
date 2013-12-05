@@ -185,6 +185,8 @@ class SwitchLink(db.Model):
 
     dsthost = db.relationship('PhysicalNetworkHost', uselist=False)
 
+    dstswitch = db.relationship('NetworkSwitch', foreign_keys=[dstswitch_id], uselist=False)
+
     def __init__(self, src_id, src_port, dst_id,
         dsttype='switch', capacity=-1, cost=1):
 
@@ -210,17 +212,8 @@ class NetworkSwitch(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     swid = db.Column(db.String(50), unique=True)
 
-    hosts = db.relationship('SwitchLink',
-        primaryjoin = id == SwitchLink.srcswitch_id
-            and SwitchLink.dstswitch_id == None,
-        lazy='dynamic')
-
-    neighbors = db.relationship('SwitchLink',
-        primaryjoin = id == SwitchLink.srcswitch_id
-            and SwitchLink.dsthost_id == None,
-        backref = db.backref('dstswitch',
-            primaryjoin = id == SwitchLink.dstswitch_id,
-            uselist = False),
+    links = db.relationship('SwitchLink',
+        primaryjoin = id == SwitchLink.srcswitch_id,
         lazy='dynamic')
 
     def __init__(self, swid):
@@ -234,7 +227,20 @@ class NetworkSwitch(db.Model):
     #   - <port> is the number of current switch's port that is connected to
     #       <neighbor>
     #   - <cost> is the cost of the link for Dijkstra's algorithm
+
+    def getneighborlinks(self, returnquery=False):
+        query = self.links.filter_by(dsthost_id = None)
+        return query if returnquery else query.all()
+
     def getneighbors(self):
         return [ (l.dstswitch, l.srcswitch_port, l.cost)
-            for l in self.neighbors.all() ]
+            for l in self.getneighborlinks() ]
+
+    def gethostlinks(self, returnquery=False):
+        query = self.links.filter_by(dstswitch_id = None)
+        return query if returnquery else query.all()
+
+    def gethosts(self):
+        return [ (l.dsthost, l.srcswitch_port, l.cost)
+            for l in self.gethostlinks() ]
 
