@@ -2,20 +2,6 @@
 from vnetmanager import db
 from vnetmanager import models
 
-switchlink_trigger = "\n".join([
-    "CREATE TRIGGER Verify_SwitchLink_%s BEFORE %s ON switch_link",
-    "FOR EACH ROW",
-    "BEGIN",
-    "   DECLARE msg VARCHAR(255);",
-    "    IF (NEW.dstswitch_id IS NOT NULL AND NEW.dsthost_id IS NOT NULL) OR",
-    "    (NEW.dstswitch_id IS NULL AND NEW.dsthost_id IS NULL) THEN",
-    "        SET msg = 'Destination constraint violated.';",
-    "        SIGNAL sqlstate '45000' SET message_text = msg;",
-    "    END IF;",
-    "END;"
-])
-
-
 userstatuses = ['inactive', 'active', 'authenticated']
 users = [('testuser', 'testpass')]
 
@@ -43,9 +29,6 @@ physhosts = [
 def init():
     db.drop_all()
     db.create_all()
-
-    for s in [("ins", "INSERT"), ("up", "UPDATE")]:
-        db.engine.execute(switchlink_trigger % s)
 
     db.session.add_all([ models.UserStatus(s) for s in userstatuses ])
     db.session.commit()
