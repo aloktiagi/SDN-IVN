@@ -25,6 +25,14 @@ physhosts = [
     ('00:00:00:00:00:04', '10.0.0.4')
 ]
 
+vnets = [
+    ('10', 10, '10.10.10.0/24'),
+    ('20', 20, '10.10.20.0/24'),
+    ('30', 30, '10.10.30.0/24')
+]
+
+access = [ (1, 1), (1, 2), (1, 3) ]
+
 def init():
     db.drop_all()
     initialize()
@@ -43,6 +51,15 @@ def init():
 
     db.session.add_all([ models.SwitchLink(*l) for l in build_links() ])
     db.session.commit()
+
+    db.session.add_all([ models.VirtualNetwork(*v) for v in vnets])
+    db.session.commit()
+
+    db.session.add_all([ models.NetworkAccess(*a) for a in access ])
+    db.session.commit()
+
+
+
 
 def initialize():
     db.create_all()

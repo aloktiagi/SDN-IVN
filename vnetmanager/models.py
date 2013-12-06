@@ -4,6 +4,7 @@ from datetime import datetime
 def now():
     return datetime.utcnow()
 
+'''
 NetworkAccess = db.Table('network_access',
     db.Column('id', db.Integer, primary_key=True),
     db.Column('user_id', db.ForeignKey('user.id')),
@@ -13,6 +14,27 @@ NetworkAccess = db.Table('network_access',
         db.ForeignKey('virtual_network_host.id')),
     db.Column('active', db.Boolean)
 )
+'''
+
+class NetworkAccess(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    virtualnetwork_id = db.Column(db.Integer,
+        db.ForeignKey('virtual_network.id'))
+
+    virtualnetworkhost_id = db.Column(db.Integer,
+        db.ForeignKey('virtual_network_host.id'))
+
+    active = db.Column(db.Boolean)
+
+    def __init__(self, user_id, vnetwork_id, vhost_id=None, active=False):
+        self.user_id = user_id
+        self.virtualnetwork_id = vnetwork_id
+        self.virtualnetworkhost_id = vhost_id
+        self.active = active
+
 
 class UserStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -63,8 +85,7 @@ class User(db.Model):
     status_id = db.Column(db.Integer,
         db.ForeignKey('user_status.id'), default=1)
 
-    authorizednetworks = db.relationship('VirtualNetwork',
-        secondary=NetworkAccess, lazy='dynamic')
+    authorizednetworks = db.relationship('NetworkAccess', lazy='dynamic')
 
     sessions = db.relationship('UserSession', lazy='dynamic')
 
