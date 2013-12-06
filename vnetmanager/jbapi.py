@@ -21,9 +21,8 @@ def index():
 
     return "<html><body>%s</body></html>" % users
     '''
-    print "Alok"
-    return 'hello world!'
-
+    print dir(request)
+    return request.remote_addr + "\n"
 
 @app.route('/api/authenticate', methods = ['POST'])
 def authenticate():
@@ -31,8 +30,6 @@ def authenticate():
     password = request.json.get('password')
     print username
     user = User.query.filter_by(username=username).first()
-    print user.username
-    print user.password
 
     # Could not authenticate
     if user is None:
@@ -40,22 +37,90 @@ def authenticate():
     if password != user.password:
         flask.abort(403)
 
+    print user.username
+    print user.password
+
+
     # Is the user already logged in?
-    #sessions = user.sessions.filter_by(endtime = None).all()
-    #print sessions
-    #if len(sessions) > 0:
-    #    for s in sessions:
-    #        s.lastactivity = now()
-    #    db.session.commit()
-    #    return 'Already logged in!'
-    return jsonify({ 'username':"alok" })
+    sessions = user.sessions.filter_by(endtime = None).all()
+    # print sessions
+    if len(sessions) > 0:
+        for s in sessions:
+            s.lastactivity = now()
+        db.session.commit()
+        return jsonify({
+            'status': 'successful',
+            'message': 'already authenticated' })
+
+    usermac = request.json.get('mac')
+
+    if usermac is None:
+        return jsonify({
+            'status': 'failed',
+            'message': 'please provide mac address'
+            })
 
 
-'''
+    userhost = PhysicalNetworkHost.query.filter_by(mac=usermac).first()
+
+    if userhost is None:
+        return jsonify({
+            'status': 'failed',
+            'message': 'could not find mac address'
+            })
+
+    us = UserSession(user.id, userhost.id)
+    db.session.add(us)
+    db.session.commit()
+
+    return jsonify({ 'status':"successful" })
+
+
 @app.route('/api/deauthenticate', methods = ['POST'])
 def deauthenticate():
-    return "deauthenticate"
+    username = request.json.get('username')
+    password = request.json.get('password')
+    usermac = request.json.get('mac')
 
+    user = User.query.filter_by(username=username).first()
+
+    # Could not authenticate
+    if user is None:
+        flask.abort(403)
+    if password != user.password:
+        flask.abort(403)
+
+    if usermac is None:
+        return jsonify({
+            'status': 'failed',
+            'message': 'please provide mac address'
+            })
+
+    userhost = PhysicalNetworkHost.query.filter_by(mac=usermac).first()
+
+    if userhost is None:
+        return jsonify({
+            'status': 'failed',
+            'message': 'could not find mac address'
+            })
+
+    # Is the user already logged in?
+    sessions = user.sessions.all()
+
+    n = now()
+    if len(sessions) > 0:
+        for s in sessions:
+            s.endtime = n
+            s.lastactivity = n
+            db.session.add(s)
+        db.session.commit()
+        return jsonify({
+            'status': 'successful',
+            'message': 'deauthenticated' })
+
+    return jsonify({'status': 'successful', 'message': 'no authenticated sessions existed'})
+
+'''
 @app.route('/api/join', methods = ['POST'])
 def joinRequest():
     return "network join request"
