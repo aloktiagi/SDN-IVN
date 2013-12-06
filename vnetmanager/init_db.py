@@ -1,6 +1,5 @@
 
-from vnetmanager import db
-from vnetmanager import models
+from vnetmanager import db, models, db_triggers
 
 userstatuses = ['inactive', 'active', 'authenticated']
 users = [('testuser', 'testpass')]
@@ -28,7 +27,7 @@ physhosts = [
 
 def init():
     db.drop_all()
-    db.create_all()
+    initialize()
 
     db.session.add_all([ models.UserStatus(s) for s in userstatuses ])
     db.session.commit()
@@ -45,3 +44,13 @@ def init():
     db.session.add_all([ models.SwitchLink(*l) for l in build_links() ])
     db.session.commit()
 
+def initialize():
+    db.create_all()
+
+    existing_triggers = [ t[0] for t in
+        db.session.execute('SHOW TRIGGERS;').fetchall() ]
+
+    triggers = db_triggers.gettriggers()
+    for t in triggers.keys():
+        if t not in existing_triggers:
+            db.session.execute(triggers[t])

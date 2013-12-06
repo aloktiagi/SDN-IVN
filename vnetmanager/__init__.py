@@ -2,7 +2,6 @@
 
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
-from vnetmanager import db_triggers
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = \
@@ -10,16 +9,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = \
 
 db = SQLAlchemy(app)
 
-existing_triggers = [ t[0] for t in
-    db.session.execute('SHOW TRIGGERS;').fetchall() ]
+from vnetmanager import init_db, models, jbapi
 
-triggers = db_triggers.gettriggers()
-for t in triggers.keys():
-    if t not in existing_triggers:
-        db.session.execute(triggers[t])
-
-
-from vnetmanager import models, jbapi
+init_db.initialize()
 
 
 
