@@ -139,7 +139,7 @@ def networks():
     session_id = int(request.json.get('session_id'))
     usersession = UserSession.query.get(session_id)
 
-    if usersession is None:
+    if usersession is None or not usersession.is_active():
         return "you suck"
 
     nets = { na.id: na.virtualnetwork.vNetID for na in usersession.user.authorizednetworks.all() }
