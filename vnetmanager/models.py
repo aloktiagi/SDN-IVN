@@ -27,6 +27,8 @@ class NetworkAccess(db.Model):
     virtualnetworkhost_id = db.Column(db.Integer,
         db.ForeignKey('virtual_network_host.id'))
 
+    virtualnetwork = db.relationship('VirtualNetwork', uselist=False)
+
     active = db.Column(db.Boolean)
 
     def __init__(self, user_id, vnetwork_id, vhost_id=None, active=False):

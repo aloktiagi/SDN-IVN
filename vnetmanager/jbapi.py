@@ -21,7 +21,7 @@ def index():
 
     return "<html><body>%s</body></html>" % users
     '''
-    print dir(request)
+    print request.remote_addr.__class__
     return request.remote_addr + "\n"
 
 @app.route('/api/authenticate', methods = ['POST'])
@@ -73,7 +73,8 @@ def authenticate():
     db.session.add(us)
     db.session.commit()
 
-    return jsonify({ 'status':"successful" })
+    return jsonify({ 'status':"successful",
+        'session_id': us.id })
 
 
 @app.route('/api/deauthenticate', methods = ['POST'])
@@ -120,16 +121,35 @@ def deauthenticate():
 
     return jsonify({'status': 'successful', 'message': 'no authenticated sessions existed'})
 
-'''
+
 @app.route('/api/join', methods = ['POST'])
 def joinRequest():
+    '''
+    Request to join a virtual network
+    User provides
+    '''
     return "network join request"
 
 @app.route('/api/leave', methods = ['POST'])
 def leaveRequest():
     return "network leave request"
 
-@app.route('/api/networks', methods = ['GET']):
+@app.route('/api/networks', methods = ['GET'])
 def networks():
-    return "laskfjsaldjfkas"
-'''
+    session_id = int(request.json.get('session_id'))
+    usersession = UserSession.query.get(session_id)
+
+    if usersession is None:
+        return "you suck"
+
+    nets = { na.id: na.virtualnetwork.vNetID for na in usersession.user.authorizednetworks.all() }
+
+    print nets
+    return jsonify(nets)
+
+
+
+
+
+
+
