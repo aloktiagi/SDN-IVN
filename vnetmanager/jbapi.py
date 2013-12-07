@@ -43,6 +43,7 @@ def authenticate():
 
     # Is the user already logged in?
     sessions = user.sessions.filter_by(endtime = None).all()
+    print userhost.ip
     # print sessions
     if len(sessions) > 0:
         for s in sessions:
@@ -59,7 +60,6 @@ def authenticate():
             'status': 'failed',
             'message': 'please provide mac address'
             })
-
 
     userhost = PhysicalNetworkHost.query.filter_by(mac=usermac).first()
 
@@ -128,7 +128,15 @@ def joinRequest():
     Request to join a virtual network
     User provides
     '''
-    return "network join request"
+    vnetwork = request.json.get('vnetwork_id')
+    usermac = request.json.get('mac')
+    userhost = PhysicalNetworkHost.query.filter_by(mac=usermac).first()
+    print userhost.ip
+    vNetHost = VirtualNetworkHost(usermac, userhost.ip, userhost.id, userhost) 
+    db.session.add(vNetHost)
+    db.session.commit()
+    
+    return "network join"
 
 @app.route('/api/leave', methods = ['POST'])
 def leaveRequest():
