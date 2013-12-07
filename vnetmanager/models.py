@@ -1,8 +1,7 @@
 from vnetmanager import db
 from datetime import datetime
-
-def now():
-    return datetime.utcnow()
+from vnetmanager.utils import now
+from netaddr import IPNetwork, IPAddress, IPSet
 
 '''
 NetworkAccess = db.Table('network_access',
@@ -62,6 +61,7 @@ class UserSession(db.Model):
 
     user = db.relationship('User', uselist=False)
     physicalhost = db.relationship('PhysicalNetworkHost', uselist=False)
+    virtualhosts = db.relationship('VirtualNetworkHost', lazy='dynamic')
 
     def __init__(self, userid, hostid, start=now(), end=None, lastact=None):
         self.user_id = userid
@@ -160,6 +160,32 @@ class VirtualNetwork(db.Model):
         return ('<VirtualNetwork vNetID: %r, VLAN: %d, CIDR: %r' %
             (self.vNetID, self.vlan, self.cidr))
 
+    def generateIP(self):
+        network = IPSet(IPNetwork(self.cidr))
+        network.remove(min(network))
+        network.remove(max(network))
+        hostlist = IPSet([ h.ip for h in self.hosts.all() ])
+        available = network - hostlist
+        return min(available)
+
+        '''
+        for host in hosts.all():
+            if(ipToInteger(host.ip) > maxIp):
+                maxIp = ipToInteger(host.ipAddr)
+        return integerToIp(maxIp+1)
+        '''
+
+    '''
+    def isIpWithinRange(ipAddr, startIpAddr, subnetRange):
+        integerIp = ipToInteger(ipAddr)
+        integerStartIp = ipToInteger(startIpAddr)
+        integerEndIp = integerStartIp + pow(2, (32-subnetRange)) -1
+        if integerIp >= integerStartIp and integerIp <= integerEndIp:
+            return True
+        else:
+            return False
+    '''
+
 
 class VirtualNetworkHost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -170,16 +196,21 @@ class VirtualNetworkHost(db.Model):
         db.ForeignKey('physical_network_host.id'))
     physicalhost = db.relationship('PhysicalNetworkHost', uselist=False)
 
+    usersession_id = db.Column(db.Integer, db.ForeignKey('user_session.id'))
+    usersession = db.relationship('UserSession', uselist=False)
+
     virtualnetwork_id = db.Column(db.Integer,
         db.ForeignKey('virtual_network.id'))
 
-    def __init__(self, mac, ip, physicalhost_id, physicalhost):
+    def __init__(self, mac, ip, physicalhost_id, vnetwork_id, session_id):
         self.mac = mac
         self.ip = ip
-        self.physicalhost = physicalhost
+        self.physicalhost_id = physicalhost_id
+        self.virtualnetwork_id = vnetwork_id
+        self.usersession_id = session_id
 
     def __repr__(self):
-        return '<PhysicalNetworkHost %r>' % self.mac
+        return '<VirtualNetworkHost %r>' % self.mac
 
 
 '''

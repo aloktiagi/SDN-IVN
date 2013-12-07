@@ -2,7 +2,7 @@
 from vnetmanager import db, models, db_triggers
 
 userstatuses = ['inactive', 'active', 'authenticated']
-users = [('testuser', 'testpass')]
+users = [('testuser', 'testpass'), ('anotheruser', '123456')]
 
 switches = [ 'sw1', 'sw2', 'sw3' ]
 
@@ -31,7 +31,7 @@ vnets = [
     ('30', 30, '10.10.30.0/24')
 ]
 
-access = [ (1, 1), (1, 2), (1, 3) ]
+access = [ (1, 1), (1, 2), (1, 3), (2, 1) ]
 
 def init():
     db.drop_all()

@@ -1,5 +1,5 @@
 import flask
-from vnetmanager import db, app
+from vnetmanager import db, app, utils
 from vnetmanager.models import *
 import cgi
 import os
@@ -28,7 +28,6 @@ def index():
 def authenticate():
     username = request.json.get('username')
     password = request.json.get('password')
-    print username
     user = User.query.filter_by(username=username).first()
 
     # Could not authenticate
@@ -37,14 +36,8 @@ def authenticate():
     if password != user.password:
         flask.abort(403)
 
-    print user.username
-    print user.password
-
-
     # Is the user already logged in?
     sessions = user.sessions.filter_by(endtime = None).all()
-    print userhost.ip
-    # print sessions
     if len(sessions) > 0:
         for s in sessions:
             s.lastactivity = now()
@@ -128,19 +121,57 @@ def joinRequest():
     Request to join a virtual network
     User provides
     '''
-    vnetwork = request.json.get('vnetwork_id')
+    vnetid = request.json.get('vnetwork_id')
+    session_id = request.json.get('session_id')
     usermac = request.json.get('mac')
     userhost = PhysicalNetworkHost.query.filter_by(mac=usermac).first()
     print userhost.ip
-    vNetHost = VirtualNetworkHost(usermac, userhost.ip, userhost.id, userhost) 
+
+    usersession = UserSession.query.get(int(session_id))
+
+    if usersession is None or not usersession.is_active():
+        return "asfdjiasfljsadfa"
+
+    vnet = VirtualNetwork.query.filter_by(vNetID = vnetid).first()
+
+    if vnet is None:
+        return "lkafslkjasfdas"
+
+    ip = str(vnet.generateIP())
+    mac = utils.generateMAC()
+
+    vNetHost = VirtualNetworkHost(mac, ip, userhost.id, vnet.id, session_id)
     db.session.add(vNetHost)
     db.session.commit()
-    
-    return "network join"
+
+    '''
+    ADD FLOWS
+    '''
+
+    return jsonify({'status': 'successful',
+        'ip': ip,
+        'mac': mac })
 
 @app.route('/api/leave', methods = ['POST'])
 def leaveRequest():
-    return "network leave request"
+    vnetid = request.json.get('vnetwork_id')
+    session_id = request.json.get('session_id')
+
+    usersession = UserSession.query.get(int(session_id))
+
+    if usersession is None or not usersession.is_active():
+        return "asfdjiasfljsadfa"
+
+    vnet = VirtualNetwork.query.filter_by(vNetID=vnetid).first()
+    vhosts = usersession.virtualhosts.filter_by(virtualnetwork_id = vnet.id).all()
+
+    print vhosts
+
+    for vh in vhosts:
+        db.session.delete(vh)
+        db.session.commit()
+
+    return "gtfo"
 
 @app.route('/api/networks', methods = ['GET'])
 def networks():
