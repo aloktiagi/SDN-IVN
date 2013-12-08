@@ -4,13 +4,13 @@ from vnetmanager import db, models, db_triggers
 userstatuses = ['inactive', 'active', 'authenticated']
 users = [('testuser', 'testpass'), ('anotheruser', '123456')]
 
-switches = [ 'sw1', 'sw2', 'sw3' ]
+switches = [ 's1', 's2', 's3' ]
 
-links = [ ('sw1', 1, 'sw2'), ('sw2', 1, 'sw1'),
-          ('sw1', 2, 'sw3'), ('sw3', 1, 'sw1') ]
+links = [ ('s1', 1, 's2'), ('s2', 1, 's1'),
+          ('s1', 2, 's3'), ('s3', 1, 's1') ]
 
 # (srcswitch, port, host)
-hostlinks = [ ('sw2', 2, 1), ('sw2', 3, 2), ('sw3', 2, 3), ('sw3', 3, 4) ]
+hostlinks = [ ('s2', 2, 1), ('s2', 3, 2), ('s3', 2, 3), ('s3', 3, 4) ]
 
 def build_links():
     sd = { s.swid: s.id for s in models.NetworkSwitch.query.all() }

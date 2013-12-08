@@ -20,4 +20,5 @@ def generateMAC():
     macString = str(hex(macInteger))
     blocks = [macString[x:x+2] for x in xrange(0, len(macString), 2)]
     macFormatted = ':'.join(blocks)
-    return macFormatted.rstrip("-L").lstrip("0x-")
+    macFormatted = macFormatted.rstrip("-L").lstrip("0x-")
+    return macFormatted.rstrip('-:').lstrip(':-')

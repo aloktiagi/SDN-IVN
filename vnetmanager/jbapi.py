@@ -1,6 +1,7 @@
 import flask
-from vnetmanager import db, app, utils
+from vnetmanager import db, app, utils, flow_pusher
 from vnetmanager.models import *
+from vnetmanager.flow_pusher import *
 import cgi
 import os
 from flask import Flask, abort, request, jsonify, g, url_for
@@ -141,12 +142,36 @@ def joinRequest():
     mac = utils.generateMAC()
 
     vNetHost = VirtualNetworkHost(mac, ip, userhost.id, vnet.id, session_id)
-    db.session.add(vNetHost)
-    db.session.commit()
-
+    #db.session.add(vNetHost)
+    #db.session.commit()
     '''
     ADD FLOWS
     '''
+
+    myswitchlink = SwitchLink.query.filter_by(dsthost=userhost).first()
+    myswitch = NetworkSwitch.query.filter_by(id = myswitchlink.srcswitch_id).first()
+    #flow = FlowPusher()
+    #flow.addflow(myswitch.swid, mac, vnet.vlan, myswitchlink.srcswitch_port)
+    #print myswitch
+
+    vNetHosts = VirtualNetworkHost.query.all()
+    if len(vNetHosts) > 0:
+        for vhost in vNetHosts:
+            print vhost.mac
+            print userhost.id
+            switchlink = SwitchLink.query.filter_by(dsthost_id=userhost.id).first()
+            switch = NetworkSwitch.query.filter_by(id = switchlink.srcswitch_id).first()
+            print switch
+            if switch.swid == myswitch.swid:
+                print "Same switch"
+            
+
+    #switchlink = SwitchLink.query.filter_by(dsthost=userhost).first()
+    #switch = NetworkSwitch.query.filter_by(id = switchlink.srcswitch_id).first()
+    #flow = FlowPusher()
+    #flow.addflow(switch.swid, mac, vnet.vlan, switchlink.srcswitch_port)
+    #print switch
+    
 
     return jsonify({'status': 'successful',
         'ip': ip,
