@@ -1,7 +1,9 @@
 import flask
-from vnetmanager import db, app, utils, flow_pusher
+from vnetmanager import db, app, utils, flow_pusher, graph
 from vnetmanager.models import *
 from vnetmanager.flow_pusher import *
+from vnetmanager.graph import *
+from vnetmanager.switchflow import *
 import cgi
 import os
 from flask import Flask, abort, request, jsonify, g, url_for
@@ -126,7 +128,6 @@ def joinRequest():
     session_id = request.json.get('session_id')
     usermac = request.json.get('mac')
     userhost = PhysicalNetworkHost.query.filter_by(mac=usermac).first()
-    print userhost.ip
 
     usersession = UserSession.query.get(int(session_id))
 
@@ -142,8 +143,8 @@ def joinRequest():
     mac = utils.generateMAC()
 
     vNetHost = VirtualNetworkHost(mac, ip, userhost.id, vnet.id, session_id)
-    #db.session.add(vNetHost)
-    #db.session.commit()
+    db.session.add(vNetHost)
+    db.session.commit()
     '''
     ADD FLOWS
     '''
@@ -157,13 +158,13 @@ def joinRequest():
     vNetHosts = VirtualNetworkHost.query.all()
     if len(vNetHosts) > 0:
         for vhost in vNetHosts:
-            print vhost.mac
-            print userhost.id
-            switchlink = SwitchLink.query.filter_by(dsthost_id=userhost.id).first()
+            switchlink = SwitchLink.query.filter_by(dsthost_id=vhost.physicalhost_id).first()
             switch = NetworkSwitch.query.filter_by(id = switchlink.srcswitch_id).first()
-            print switch
-            if switch.swid == myswitch.swid:
-                print "Same switch"
+            if switch.swid != myswitch.swid:
+                print 'Switches myswitch {} switch {}'.format(myswitch.swid,switch.swid)
+                traverse = graph.dijkstra(myswitch.swid,switch.swid)
+                print 'Traverse {}'.format(traverse)
+                addMultiSwitchFlows(traverse,mac,vhost.mac)
             
 
     #switchlink = SwitchLink.query.filter_by(dsthost=userhost).first()
