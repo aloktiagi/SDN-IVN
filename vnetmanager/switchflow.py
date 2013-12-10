@@ -4,133 +4,117 @@ import flask
 from vnetmanager import db, app
 from vnetmanager.models import *
 
+class FlowPusher(object):
+    def __init__(self):
+        switches = NetworkSwitch.query.all()
+        self.BroadcastIntPortList = {};
+        self.BroadcastExtPortList = {};
+
+        for switch in switches:
+            port = [None]
+            self.BroadcastIntPortList[switch.swid] = port
+            self.BroadcastExtPortList[switch.swid] = port
+
+    def pushflow(self, swid, flowstrs):
+        with open("/tmp/flow", "wb") as fo:
+            fo.writelines(flowstrs)
+        subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', swid, '/tmp/flow'])
+
+    def broadcastFlows(self, switch,priority,vlan,ext=True):
+            flowstrs = []
+            if ext == True:
+                for port in self.BroadcastExtPortList[switch]:
+                    portlist = '{},'.format(port)
+                print 'External ports broadcast flows ports {}'.format(portlist)
+                swflow = 'table=1, priority={}, dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}'.format(priority,vlan,portlist)
+            else:
+                for port in self.BroadcastIntPortList[switch]:
+                    portlist = '{},'.format(port)
+                print 'Internal ports broadcast flows ports {}'.format(portlist)
+                swflow = 'table=1, priority={},dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=strip_vlan,output:'.format(priority,vlan,portlist)
+            flowstrs.append(swflow)
+            self.pushflow(switch,flowstrs)
+
+
+    def addflow(self, switch, mac, vlan, port):
+        flowstrs = []
+        #port = []
+        print 'Adding individual flows per mac switch {} port {}'.format(switch,port)
+        swflow = 'table=0, priority=100, in_port={}, vlan_tci=0,dl_src={}, actions=mod_vlan_vid:{},resubmit(,1)'.format(port,mac,vlan)
+        flowstrs.append(swflow)
+        swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=strip_vlan,output:{}'.format(vlan, mac, port)
+        flowstrs.append(swflow)
+        self.pushflow(switch,flowstrs)
+        
+        if port not in self.BroadcastIntPortList[switch]:
+            self.BroadcastIntPortList[switch].append(port)
+        self.broadcastFlows(switch,101,vlan,False)
+
+    def createAndAddSwitchFlows(self,switchlist,srcmac,dstmac,vlan):
+        flowstrs = []
+        srcswitch = NetworkSwitch.query.filter_by(swid = switchlist[0]).first()
+        dstswitch = NetworkSwitch.query.filter_by(swid = switchlist[1]).first()
+        extport = srcswitch.links.filter_by(dstswitch_id = dstswitch.id).first().srcswitch_port
+        print 'First Switch to Second switch port {}'.format(extport)
+
+        swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,dstmac,extport)
+        flowstrs.append(swflow)
+        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)'.format(extport)
+        flowstrs.append(swflow)
+        self.pushflow(switchlist[0],flowstrs)
+        if extport not in self.BroadcastExtPortList[switchlist[0]]:
+            self.BroadcastExtPortList[switchlist[0]].append(extport)
+        self.broadcastFlows(switchlist[0],100,vlan,True)
+
+        srcswitch = NetworkSwitch.query.filter_by(swid = switchlist[len(switchlist)-1]).first()
+        dstswitch = NetworkSwitch.query.filter_by(swid = switchlist[len(switchlist)-2]).first()
+        extport = srcswitch.links.filter_by(dstswitch_id = dstswitch.id).first().srcswitch_port
+        print 'Last Switch to Second Last switch port {}'.format(extport)
+
+        swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,srcmac,extport)
+        flowstrs.append(swflow)
+        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)'.format(extport)
+        flowstrs.append(swflow)
+        self.pushflow(switchlist[len(switchlist)-1],flowstrs)
+        if extport not in self.BroadcastExtPortList[switchlist[len(switchlist)-1]]:
+            self.BroadcastExtPortList[switchlist[len(switchlist)-1]].append(extport)
+        self.broadcastFlows(switchlist[len(switchlist)-1],100,vlan,True)
+
+    def createAndAddIntermediateFlows(self,switchlist,srcmac,dstmac,vlan):
+        for i in range(1,len(switchlist) - 1):
+            flowstrs = []
+            srcswitch = NetworkSwitch.query.filter_by(swid = switchlist[i]).first()
+            prevswitch = NetworkSwitch.query.filter_by(swid = switchlist[i-1]).first()
+            nxtswitch = NetworkSwitch.query.filter_by(swid = switchlist[i+1]).first()
+            prevport = srcswitch.links.filter_by(dstswitch_id = prevswitch.id).first().srcswitch_port
+            nxtport = srcswitch.links.filter_by(dstswitch_id = nxtswitch.id).first().srcswitch_port
+        
+            print 'Port connected to previous switch {} port to next switch {}'.format(prevport,nxtport)
+            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)'.format(prevport)
+            flowstrs.append(swflow)
+            swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,dstmac,nxtport)
+            flowstrs.append(swflow)
+
+            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)'.format(nxtport)
+            flowstrs.append(swflow)
+            swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,srcmac,prevport)
+            flowstrs.append(swflow)
+        
+            self.pushflow(switchlist[i],flowstrs)
+            if prevport not in self.BroadcastExtPortList[switchlist[i]]:
+                self.BroadcastExtPortList[switchlist[i]].append(prevport)
+            if nxtport not in self.BroadcastExtPortList[switchlist[i]]:
+                self.BroadcastExtPortList[switchlist[i]].append(nxtport)
+            self.broadcastFlows(switchlist[i],100,vlan,True)
+
+
+    def addMultiSwitchFlows(self, switchlist, srcmac, dstmac, vlan):
+        self.createAndAddSwitchFlows(switchlist,srcmac,dstmac, vlan)
+        self.createAndAddIntermediateFlows(switchlist,srcmac,dstmac, vlan)
+
 '''
-switchlist = []
-switchlist.append("s2")
-switchlist.append("s1")
-switchlist.append("s4")
-srcmac = "4e:ce:8c:e1:29:aa"
-dstmac = "fa:91:d5:03:4e:9c"
+    def pushflows(sw2flows):
+        for sw in sw2flows.keys():
+            pushflow(sw, sw2flows[sw])
 '''
 
-def pushflow(swid, flowstrs):
-
-    with open("/tmp/flow", "wb") as fo:
-        fo.writelines(flowstrs)
-
-    subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', swid, '/tmp/flow'])
-
-
-def pushflows(sw2flows):
-
-    for sw in sw2flows.keys():
-        pushflow(sw, sw2flows[sw])
-
-def createAndAddFirstSwitchFlows(switchlist,dstmac):
-    flowstrs = []
-    srcswitch = NetworkSwitch.query.filter_by(swid = switchlist[0]).first()
-    dstswitch = NetworkSwitch.query.filter_by(swid = switchlist[1]).first()
-    extport = srcswitch.links.filter_by(dstswitch_id = dstswitch.id).first().srcswitch_port
-    print 'Switch port {}'.format(extport)
-    '''
-
-    swflow = 'table=1, priority=100,dl_vlan=10, dl_dst={}, actions=output:{}'.format(dstmac,extport)
-    flowstrs.append(swflow)
-    swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)'.format(extport)
-    flowstrs.append(swflow)
-    swflow = 'table=1, priority=100, dl_vlan=10, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}'.format(extport)
-    flowstrs.append(swflow)
-    pushflow(switchlist[0],flowstrs)
-    '''
-
-def addMultiSwitchFlows(switchlist, srcmac, dstmac):
-    createAndAddFirstSwitchFlows(switchlist,dstmac)
-    
-    
-'''
-#switchlist[0]
-print 'First switch configure only external ports {}'.format(switchlist[0])
-fo = open("/tmp/flow", "wb")
-fo.write("table=1, priority=100,dl_vlan=10, dl_dst=");
-fo.write(dstmac);
-fo.write(", actions=output:");
-#TODO Find port that connects switchlist[i] to switchlist[i+1]
-fo.write("4");
-fo.write("\n")
-fo.write("table=0, priority=99, in_port=");
-#TODO Find port that connects switchlist[i] to switchlist[i+1]
-fo.write("4");
-fo.write(", actions=resubmit(,1)");
-fo.write("\n")
-
-fo.write("table=1, priority=100, dl_vlan=10, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:");
-#TODO Find port that connects switchlist[0] to switchlist[1]
-fo.write("4");
-fo.write("\n")
-
-fo.close()
-subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', switchlist[0], '/tmp/flow'])
-
-#switchlist[last one]
-print 'Last switch configure only external ports {}'.format(switchlist[len(switchlist)-1])
-fo = open("/tmp/flow", "wb")
-fo.write("table=1, priority=100,dl_vlan=10, dl_dst=");
-#srcmac is the dst mac for the last switch
-fo.write(srcmac);
-fo.write(", actions=output:");
-#TODO Find port that connects switchlist[i] to switchlist[i+1]
-fo.write("4");
-fo.write("\n")
-fo.write("table=0, priority=99, in_port=");
-#TODO Find port that connects switchlist[i] to switchlist[i+1]
-fo.write("4");
-fo.write(", actions=resubmit(,1)");
-
-fo.write("\n")
-fo.write("table=1, priority=100, dl_vlan=10, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:");
-#TODO Find port that connects switchlist[last] to switchlist[last - 1]
-fo.write("4");
-fo.write("\n")
-fo.close()
-
-subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', switchlist[len(switchlist)-1], '/tmp/flow'])
-
-for i in range(1,len(switchlist) - 1):
-    print 'Configuring intermediate switch {}'.format(switchlist[i])
-    fo = open("/tmp/flow", "wb")
-    fo.write("table=0, priority=99,in_port=");
-    #TODO get port connected to switchlist[i-1] 
-    fo.write("1");
-    fo.write(", actions=resubmit(,1)");
-    #TODO Find port that connects switchlist[i] to switchlist[i+1]
-    fo.write("\n")
-    fo.write("table=1, priority=100, dl_vlan=10, dl_dst=");
-    fo.write(dstmac);
-    fo.write(", actions=output:");
-    #TODO Find port that connects switchlist[i] to switchlist[i+1]
-    fo.write("3");
-    fo.write("\n")
-    
-    fo.write("table=0, priority=99,in_port=");
-    #TODO get port connected to switchlist[i+1]
-    fo.write("3");
-    fo.write(", actions=resubmit(,1)");
-    #TODO Find port that connects switchlist[i] to switchlist[i+1]
-    fo.write("\n")
-    fo.write("table=1, priority=100, dl_vlan=10, dl_dst=");
-    fo.write(srcmac);
-    fo.write(", actions=output:");
-    #TODO Find port that connects switchlist[i] to switchlist[i-1]
-    fo.write("1");
-    fo.write("\n")
-
-    fo.write("table=1, priority=100, dl_vlan=10, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:");
-    #TODO Find port that connects switchlist[i] to switchlist[i-1] and switchlist[i+1]
-    fo.write("1");
-    fo.write(",");
-    fo.write("3");
-    fo.write("\n")
-
-    fo.close()
-    subprocess.call(['sudo', 'ovs-ofctl', 'add-flows', switchlist[i], '/tmp/flow'])
-'''

@@ -151,9 +151,8 @@ def joinRequest():
 
     myswitchlink = SwitchLink.query.filter_by(dsthost=userhost).first()
     myswitch = NetworkSwitch.query.filter_by(id = myswitchlink.srcswitch_id).first()
-    #flow = FlowPusher()
-    #flow.addflow(myswitch.swid, mac, vnet.vlan, myswitchlink.srcswitch_port)
-    #print myswitch
+    flow = FlowPusher()
+    flow.addflow(myswitch.swid, mac, vnet.vlan, myswitchlink.srcswitch_port)
 
     vNetHosts = VirtualNetworkHost.query.all()
     if len(vNetHosts) > 0:
@@ -164,7 +163,7 @@ def joinRequest():
                 print 'Switches myswitch {} switch {}'.format(myswitch.swid,switch.swid)
                 traverse = graph.dijkstra(myswitch.swid,switch.swid)
                 print 'Traverse {}'.format(traverse)
-                addMultiSwitchFlows(traverse,mac,vhost.mac)
+                flow.addMultiSwitchFlows(traverse,mac,vhost.mac,vnet.vlan)
             
 
     #switchlink = SwitchLink.query.filter_by(dsthost=userhost).first()
