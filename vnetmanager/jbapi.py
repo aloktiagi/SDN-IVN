@@ -160,7 +160,6 @@ def joinRequest():
             switchlink = SwitchLink.query.filter_by(dsthost_id=vhost.physicalhost_id).first()
             switch = NetworkSwitch.query.filter_by(id = switchlink.srcswitch_id).first()
             if switch.swid != myswitch.swid:
-                print 'Switches myswitch {} switch {}'.format(myswitch.swid,switch.swid)
                 traverse = graph.dijkstra(myswitch.swid,switch.swid)
                 print 'Traverse {}'.format(traverse)
                 flow.addMultiSwitchFlows(traverse,mac,vhost.mac,vnet.vlan)
@@ -210,10 +209,3 @@ def networks():
 
     print nets
     return jsonify(nets)
-
-
-
-
-
-
-
