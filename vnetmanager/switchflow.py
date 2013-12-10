@@ -34,7 +34,7 @@ class FlowPusher(object):
                     portlist += ','
             print 'External Broad cast ports {}'.format(self.BroadcastExtPortList[switch])
             print 'External ports broadcast flows ports {}'.format(portlist)
-            swflow = 'table=1, priority={}, dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}'.format(priority,vlan,portlist)
+            swflow = 'table=1, priority={}, dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}\n'.format(priority,vlan,portlist)
         else:
             portlist = ''
             for port in self.BroadcastIntPortList[switch]:
@@ -42,7 +42,7 @@ class FlowPusher(object):
                     portlist += str(port)
                     portlist += ','
             print 'Internal ports broadcast flows ports {}'.format(portlist)
-            swflow = 'table=1, priority={},dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=strip_vlan,output:{}'.format(priority,vlan,portlist)
+            swflow = 'table=1, priority={},dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=strip_vlan,output:{}\n'.format(priority,vlan,portlist)
         flowstrs.append(swflow)
         self.pushflow(switch,flowstrs)
 
@@ -50,9 +50,9 @@ class FlowPusher(object):
         flowstrs = []
         #port = []
         print 'Adding individual flows per mac switch {} port {}'.format(switch,port)
-        swflow = 'table=0, priority=100, in_port={}, vlan_tci=0,dl_src={}, actions=mod_vlan_vid:{},resubmit(,1)'.format(port,mac,vlan)
+        swflow = 'table=0, priority=100, in_port={}, vlan_tci=0,dl_src={}, actions=mod_vlan_vid:{},resubmit(,1)\n'.format(port,mac,vlan)
         flowstrs.append(swflow)
-        swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=strip_vlan,output:{}'.format(vlan, mac, port)
+        swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=strip_vlan,output:{}\n'.format(vlan, mac, port)
         flowstrs.append(swflow)
         self.pushflow(switch,flowstrs)
         
@@ -66,9 +66,9 @@ class FlowPusher(object):
         dstswitch = NetworkSwitch.query.filter_by(swid = switchlist[1]).first()
         extport = srcswitch.links.filter_by(dstswitch_id = dstswitch.id).first().srcswitch_port
 
-        swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,dstmac,extport)
+        swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,dstmac,extport)
         flowstrs.append(swflow)
-        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)'.format(extport)
+        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)\n'.format(extport)
         flowstrs.append(swflow)
         self.pushflow(switchlist[0],flowstrs)
         if extport not in self.BroadcastExtPortList[switchlist[0]]:
@@ -80,9 +80,9 @@ class FlowPusher(object):
         dstswitch = NetworkSwitch.query.filter_by(swid = switchlist[len(switchlist)-2]).first()
         extport = srcswitch.links.filter_by(dstswitch_id = dstswitch.id).first().srcswitch_port
 
-        swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,srcmac,extport)
+        swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,srcmac,extport)
         flowstrs.append(swflow)
-        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)'.format(extport)
+        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)\n'.format(extport)
         flowstrs.append(swflow)
         self.pushflow(switchlist[len(switchlist)-1],flowstrs)
         if extport not in self.BroadcastExtPortList[switchlist[len(switchlist)-1]]:
@@ -99,14 +99,14 @@ class FlowPusher(object):
             prevport = srcswitch.links.filter_by(dstswitch_id = prevswitch.id).first().srcswitch_port
             nxtport = srcswitch.links.filter_by(dstswitch_id = nxtswitch.id).first().srcswitch_port
         
-            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)'.format(prevport)
+            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)\n'.format(prevport)
             flowstrs.append(swflow)
-            swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,dstmac,nxtport)
+            swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,dstmac,nxtport)
             flowstrs.append(swflow)
 
-            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)'.format(nxtport)
+            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)\n'.format(nxtport)
             flowstrs.append(swflow)
-            swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}'.format(vlan,srcmac,prevport)
+            swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,srcmac,prevport)
             flowstrs.append(swflow)
         
             self.pushflow(switchlist[i],flowstrs)
