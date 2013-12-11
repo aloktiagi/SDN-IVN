@@ -14,8 +14,8 @@ class FlowPusher(object):
             port = [None]
             self.BroadcastIntPortList[switch.swid] = port
         for switch in switches:
-            port = [None]
-            self.BroadcastExtPortList[switch.swid] = port
+            blah = [None]
+            self.BroadcastExtPortList[switch.swid] = blah
 
     def pushflow(self, swid, flowstrs):
         with open("/tmp/flow", "wb") as fo:
@@ -36,14 +36,13 @@ class FlowPusher(object):
                         if extport is not None:
                             swflow = 'table=1, priority={}, in_port={}, dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}\n'.format(priority,port,vlan,extport)
                     flowstrs.append(swflow)
-            if len(self.BroadcastIntPortList[switch]) == 1:
-                portlist = ''
-                for port in self.BroadcastExtPortList[switch]:
-                    if port is not None:
-                        portlist += str(port)
-                        portlist += ','
-                swflow = 'table=1, priority={}, dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}\n'.format(priority,vlan,portlist)
-                flowstrs.append(swflow)
+            portlist = ''
+            for port in self.BroadcastExtPortList[switch]:
+                if port is not None:
+                    portlist += str(port)
+                    portlist += ','
+            swflow = 'table=1, priority={}, dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}\n'.format(99,vlan,portlist)
+            flowstrs.append(swflow)
         else:
             portlist = ''
             for port in self.BroadcastIntPortList[switch]:
@@ -68,6 +67,7 @@ class FlowPusher(object):
         if port not in self.BroadcastIntPortList[switch]:
             self.BroadcastIntPortList[switch].append(port)
         self.broadcastFlows(switch,100,vlan,False)
+        print 'swich {} int port list {}'.format(switch,self.BroadcastIntPortList[switch])
 
     def createAndAddSwitchFlows(self,switchlist,srcmac,dstmac,vlan):
         flowstrs = []
@@ -76,6 +76,7 @@ class FlowPusher(object):
         srcswitch = NetworkSwitch.query.filter_by(swid = switchlist[0]).first()
         dstswitch = NetworkSwitch.query.filter_by(swid = switchlist[1]).first()
         extport = srcswitch.links.filter_by(dstswitch_id = dstswitch.id).first().srcswitch_port
+        print 'BBBEEEEE swich {} int port list {}'.format('s2',self.BroadcastIntPortList['s2'])
 
         swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,dstmac,extport)
         flowstrs.append(swflow)
@@ -139,5 +140,15 @@ class FlowPusher(object):
     def pushflows(sw2flows):
         for sw in sw2flows.keys():
             pushflow(sw, sw2flows[sw])
+'''
+'''
+            if len(self.BroadcastIntPortList[switch]) == 1:
+                portlist = ''
+                for port in self.BroadcastExtPortList[switch]:
+                    if port is not None:
+                        portlist += str(port)
+                        portlist += ','
+                swflow = 'table=1, priority={}, dl_vlan={}, dl_dst=ff:ff:ff:ff:ff:ff, actions=output:{}\n'.format(priority,vlan,portlist)
+                flowstrs.append(swflow)
 '''
 
