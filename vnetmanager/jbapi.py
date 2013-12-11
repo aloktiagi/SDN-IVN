@@ -154,7 +154,7 @@ def joinRequest():
     flow = FlowPusher()
     flow.addflow(myswitch.swid, mac, vnet.vlan, myswitchlink.srcswitch_port)
 
-    vNetHosts = VirtualNetworkHost.query.all()
+    vNetHosts = vnet.hosts.all()  #VirtualNetworkHost.query.all()
     if len(vNetHosts) > 0:
         for vhost in vNetHosts:
             switchlink = SwitchLink.query.filter_by(dsthost_id=vhost.physicalhost_id).first()
