@@ -32,7 +32,7 @@ for opt, arg in opts:
    elif opt in ("-v"):
       vnetid = int(arg)
 
-url = 'http://127.0.0.1:5000/api/'
+url = 'http://192.168.237.148:5000/api/'
 print 'Username {} password {} mac {} vnet {}'.format(username,password,mac,vnetid)
 authdata = { "username": username, "password": password, "mac": mac }
 authdata = json.dumps(authdata)
@@ -61,8 +61,8 @@ ipToAdd += '/8'
 print 'IP to add {}'.format(ipToAdd)
 print 'Mac to add {}'.format(macToAdd)
 
-dev = commands.getstatusoutput('ip r | cut -f 3 -d " "')
-ipToDel = commands.getstatusoutput('ip r | cut -f 12 -d " "')
+dev = commands.getstatusoutput('ip a | grep eth0 | grep inet | awk \'{print $7}\'')
+ipToDel = commands.getstatusoutput('ip a | grep eth0 | grep inet | awk \'{print $2}\'')
 
 subprocess.call(["ifconfig", dev[1], "hw", "ether", macToAdd])
 subprocess.call(["ip", "a", "d", ipToDel[1] , "dev", dev[1]])
