@@ -76,7 +76,7 @@ class FlowPusher(object):
 
         swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,dstmac,extport)
         flowstrs.append(swflow)
-        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)\n'.format(extport)
+        swflow = 'table=0, priority=99, dl_vlan={}, in_port={}, actions=resubmit(,1)\n'.format(vlan,extport)
         flowstrs.append(swflow)
         self.pushflow(switchlist[0],flowstrs)
         if extport not in self.BroadcastExtPortList[switchlist[0]]:
@@ -91,7 +91,7 @@ class FlowPusher(object):
         
         swflow = 'table=1, priority=100,dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,srcmac,extport)
         flowstrs.append(swflow)
-        swflow = 'table=0, priority=99, in_port={}, actions=resubmit(,1)\n'.format(extport)
+        swflow = 'table=0, priority=99, dl_vlan={}, in_port={}, actions=resubmit(,1)\n'.format(vlan,extport)
         flowstrs.append(swflow)
         self.pushflow(switchlist[len(switchlist)-1],flowstrs)
         if extport not in self.BroadcastExtPortList[switchlist[len(switchlist)-1]]:
@@ -107,12 +107,12 @@ class FlowPusher(object):
             prevport = srcswitch.links.filter_by(dstswitch_id = prevswitch.id).first().srcswitch_port
             nxtport = srcswitch.links.filter_by(dstswitch_id = nxtswitch.id).first().srcswitch_port
         
-            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)\n'.format(prevport)
+            swflow = 'table=0, priority=99, dl_vlan={}, in_port={}, actions=resubmit(,1)\n'.format(vlan,prevport)
             flowstrs.append(swflow)
             swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,dstmac,nxtport)
             flowstrs.append(swflow)
 
-            swflow = 'table=0, priority=99,in_port={}, actions=resubmit(,1)\n'.format(nxtport)
+            swflow = 'table=0, priority=99, dl_vlan={}, in_port={}, actions=resubmit(,1)\n'.format(vlan,nxtport)
             flowstrs.append(swflow)
             swflow = 'table=1, priority=100, dl_vlan={}, dl_dst={}, actions=output:{}\n'.format(vlan,srcmac,prevport)
             flowstrs.append(swflow)
